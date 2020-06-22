@@ -1,0 +1,16 @@
+## Interface: 30300
+## Title: Mikecode
+## Author: Mike
+## Version: 1.1
+## Notes: None
+## Dependencies: 
+## OptionalDeps: 
+## SavedVariablesPerCharacter: 
+## SavedVariables: 
+mikebasecode.lua
+mikewarriorprotcode.lua
+mikepriest.lua
+mikemage.lua
+mikeshaman.lua
+AutoEquipBestItem.lua
+AutoDisenchant.lua

@@ -11,11 +11,9 @@ Mike_Priest_Interact = false
 Mike_intCounter = 1
 
 -- Change this to `true` if you want to output everything that is happening on all the toons. Gets printed in eachs toon chat window.
-local Mike_Debug = false
+local Mike_Debug = true
 
 local MAGNUSBOX = CreateFrame("Button","MAGNUSBOX",UIParent)
-
-
 
 MAGNUSBOX:RegisterEvent("UI_ERROR_MESSAGE");
 local Mike_outOfRange = false
@@ -43,6 +41,18 @@ function MAGNUSBOX:OnEvent()
     end
 end
 MAGNUSBOX:SetScript("OnEvent", MAGNUSBOX.OnEvent) 
+
+function Mike_GetTalentIndex()
+    local Mike_pointChecker = 0
+    local Mike_Talent_Index = nil
+    for x=1,3 do
+        local _, _, pointsSpent, _, _ = GetTalentTabInfo(x)
+        if Mike_pointChecker < pointsSpent then
+            Mike_Talent_Index = x
+        end
+    end
+    return Mike_Talent_Index
+end
 
 function Mike_None_In_Combat()
     for i, v in ipairs(Mike_party) do
@@ -175,6 +185,13 @@ function Mike_Check_spell_ready(spell)
     _,durgcd = GetSpellCooldown(61304)
     _,dur = GetSpellCooldown(spell)
     return x and durgcd == 0 and dur == 0
+end
+
+function Mike_CastSpellByName(spell)
+    if Mike_Debug then
+        print("Casting: "..spell)
+    end
+    CastSpellByName(spell)
 end
 
 function Mike_Print(x)

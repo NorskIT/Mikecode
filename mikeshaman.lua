@@ -1,3 +1,57 @@
+-- (1): Elemental (2): Enchancement (3): Restoration
+local Mike_Shaman_talent = nil
+
+function Mike_Shaman_Main()
+    if Mike_Shaman_talent == nil then
+        Mike_Shaman_talent = Mike_GetTalentIndex()
+    end
+    if Mike_Shaman_talent == 1 then
+        Mike_Shaman_Elemental()
+    elseif Mike_Shaman_talent == 2 then
+        Mike_Shaman_Enchancement()
+    elseif Mike_Shaman_talent == 3 then
+        Mike_Shaman_Restoration()
+    end
+        
+end
+
+function Mike_Shaman_Elemental()
+    Mike_Call_Of_the_Elements()
+    if Mike_Check_spell_ready("Flame Shock") and not UnitAura("target","Flame Shock") then
+        Mike_CastSpellByName("Flame Shock")
+        SpellTargetUnit("target")
+        return
+    elseif Mike_Check_spell_ready("Lava Burst") and UnitAura("target","Flame Shock") and IsSpellKnown(51505) == true then
+        Mike_CastSpellByName("Lava Burst")
+        SpellTargetUnit("target")
+        return
+    elseif Mike_Check_spell_ready("Elemental Mastery") then
+        Mike_CastSpellByName("Elemental Mastery")
+        return
+    elseif Mike_Check_spell_ready("Chain Lightning") then
+        Mike_CastSpellByName("Chain Lightning")
+        SpellTargetUnit("target")
+        return
+    else
+        Mike_CastSpellByName("Lightning Bolt")
+        SpellTargetUnit("target")
+        return
+    end
+end
+
+function Mike_Call_Of_the_Elements()
+    local totalTotemsUp = 0
+    for x=1,4 do
+        haveTotem, totemName, startTime, duration = GetTotemInfo(x)
+        if totemName ~= "" then
+            totalTotemsUp = totalTotemsUp + 1
+        end
+    end
+    if totalTotemsUp <= 2 then
+        Mike_CastSpellByName("Call of the Elements")
+    end 
+end
+
 function Shaman_startup_heal()
     if not UnitAura("player", "Mana Spring") then
         CastSpellByName("Call of the Elements")
@@ -11,7 +65,7 @@ function Shaman_startup_heal()
     end
 end
 
-function Shaman_heal()
+function Mike_Shaman_Restoration()
     Mike_Interrupt_target()
     local spellChannel = UnitChannelInfo("player")
     local spellCast = UnitCastingInfo("unit")

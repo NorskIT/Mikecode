@@ -5,10 +5,21 @@ Mike_partyMages = {"Mikemagen", "Mikemagto", "Mikemagtre", "Mikemagfire", "Mikem
 Mike_partyInterruptors = {"Mikemagen", "Mikemagto", "Mikemagtre", "Mikemagfire", "Mikemagfem", "Mikemagseks", "Mikemagsyv", "Mikeshamheal", "Mikewarrior"}
 Mike_health_flask = {"Runic Healing Potion", "Super Healing Potion"}
 Mike_mana_flask = {"Runic Mana Potion", "Super Mana Potion"}
+Mike_Name_Main = "Mikeshamen"
 
 Mike_Priest_Interact = false
 
 Mike_intCounter = 1
+
+Mike_Role = nil -- tank / caster / melee
+Mike_Caster_Interact = false -- Is a caster walking towards an enemy
+
+local class = UnitClass("player")
+if class == "Warrior" or class == "Paladin" then
+    Mike_Role = "melee"
+elseif class == "Mage" or class == "Shaman" then
+    Mike_Role = "caster"
+end
 
 -- Change this to `true` if you want to output everything that is happening on all the toons. Gets printed in eachs toon chat window.
 local Mike_Debug = true
@@ -40,7 +51,83 @@ function MAGNUSBOX:OnEvent()
         return
     end
 end
-MAGNUSBOX:SetScript("OnEvent", MAGNUSBOX.OnEvent) 
+MAGNUSBOX:SetScript("OnEvent", MAGNUSBOX.OnEvent)
+
+function Mike_Follow(spec)
+    if UnitName("player") == Mike_Name_Main then return end
+    if spec == "Healer" then
+        if UnitIsDeadOrGhost("Mikemagen") ~= nil then
+            Mike_Follow_Closest()
+        else
+            FollowUnit("Mikemagen")
+        end
+        return
+    else
+        if UnitIsDeadOrGhost(Mike_Name_Main) ~= nil then
+            Mike_Follow_Closest()
+        else
+            FollowUnit(Mike_Name_Main)
+        end
+        return
+    end
+end
+
+local Mike_Target_Assist_GUID = nil
+function Mike_Assist()
+    if UnitName("player") == Mike_Name_Main then return end
+    AssistUnit(Mike_Name_Main)
+    SetCVar("autoInteract", 1)
+    InteractUnit("target")
+    SetCVar("autoInteract", 0)
+    
+    if Mike_Role == "caster" then
+        Mike_Caster_Interact = true
+    end
+end
+
+function Mike_Setup()
+    Mike_Interact_Counter = 0
+    Mike_Create_Macros()
+end
+
+function Mike_Create_Macros()
+    local race = UnitRace("player")
+    if race == "Orc" then
+        Mike_Mount_Sequence = "/run CastSpellByName(\"Tawny Wind Rider\"); CastSpellByName(\"Swift Timber Wolf\")"
+    elseif race == "Troll" then
+        Mike_Mount_Sequence = "/run CastSpellByName(\"Tawny Wind Rider\"); CastSpellByName(\"Swift Orange Raptor\")"
+    end
+    Mike_DeleteMacro("Mount")
+    index=CreateMacro("Mount",0,Mike_Mount_Sequence,nil)
+	PickupMacro(index)
+	PlaceAction(56)
+    ClearCursor()
+    if class == "Shaman" then
+        PickupSpell("Auto Attack")
+        PlaceAction(24)
+        ClearCursor()
+    end
+end
+
+function Mike_Follow_Closest()
+    if UnitInRaid("player") ~= nil then
+        for x=1, GetNumRaidMembers() do
+            if UnitIsDeadOrGhost("raid"..x) == nil and CheckInteractDistance("raid"..x, 4) then
+                FollowUnit("raid"..x)
+            end
+        end
+    else
+        for x=1, GetNumPartyMembers() do
+            if UnitIsDeadOrGhost("party"..x) == nil and CheckInteractDistance("party"..x, 4) then
+                FollowUnit("party"..x)
+            end
+        end
+    end     
+end
+
+function Mike_Set_Main()
+    Mike_Name_Main = UnitName("player")
+end
 
 function Mike_GetTalentIndex()
     local Mike_pointChecker = 0
@@ -200,6 +287,12 @@ function Mike_Print(x)
     end
 end
 
+function Mike_DeleteMacro(indexorname)
+    name,_,body,_ = GetMacroInfo(indexorname)
+    if body then
+        DeleteMacro(name)
+    end
+end
 
 function Mike_Interrupt_target()
     spell, rank, displayName, icon, startTime, endTime, isTradeSkill, castID, interrupt = UnitCastingInfo("target")

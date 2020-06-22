@@ -3,6 +3,10 @@ local Mike_Priest_lowHpHeal = false
 
 local Mike_Priest_Heal_All = true
 
+function Mike_Priest_Main()
+    Priest_auto_heal()
+end
+
 function Priest_auto_heal()
     local spellChannel = UnitChannelInfo("player")
     local spellCast = UnitCastingInfo("unit")

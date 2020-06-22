@@ -2,17 +2,52 @@
 local Mike_Shaman_talent = nil
 
 function Mike_Shaman_Main()
+    Mike_Shaman_Common_Function()
     if Mike_Shaman_talent == nil then
         Mike_Shaman_talent = Mike_GetTalentIndex()
     end
     if Mike_Shaman_talent == 1 then
+        if UnitName("player") ~= Mike_Name_Main then
+            AssistUnit(Mike_Name_Main)
+        end
+        Mike_Role = "caster"
         Mike_Shaman_Elemental()
     elseif Mike_Shaman_talent == 2 then
+        if UnitName("player") ~= Mike_Name_Main then
+            AssistUnit(Mike_Name_Main)
+        end
+        Mike_Role = "melee"
         Mike_Shaman_Enchancement()
     elseif Mike_Shaman_talent == 3 then
+        Mike_Role = "caster"
         Mike_Shaman_Restoration()
     end
         
+end
+
+function Mike_Shaman_Enchancement()
+    -- Not implemented
+end
+
+function Mike_Shaman_Aoe()
+
+end
+
+function Mike_Shaman_PowerUp()
+
+end
+
+function Mike_Shaman_Common_Function()
+    local spellChannel = UnitChannelInfo("player")
+    local spellCast = UnitCastingInfo("player")
+    if IsSpellInRange("Earth Shock","target") == 1 and Mike_Caster_Interact and spellChannel == nil and spellCast == nil then
+        Mike_Caster_Interact = false
+        if IsCurrentAction(24) then
+            UseAction(24)
+        end
+        Stop_Follow()
+        print("Stopped following")
+    end
 end
 
 function Mike_Shaman_Elemental()
@@ -54,36 +89,28 @@ end
 
 function Shaman_startup_heal()
     if not UnitAura("player", "Mana Spring") then
-        CastSpellByName("Call of the Elements")
+       Mike_CastSpellByName("Call of the Elements")
     end
     local hasEnchantWeapon = GetWeaponEnchantInfo("player")
     if hasEnchantWeapon == nil then
-        CastSpellByName("Earthliving Weapon")
+       Mike_CastSpellByName("Earthliving Weapon")
     end
     if not UnitAura("player", "Water Shield") and Mike_Percentage_health("player") == 1 then
-        CastSpellByName("Water Shield")
+       Mike_CastSpellByName("Water Shield")
     end
 end
 
 function Mike_Shaman_Restoration()
     Mike_Interrupt_target()
     local spellChannel = UnitChannelInfo("player")
-    local spellCast = UnitCastingInfo("unit")
+    local spellCast = UnitCastingInfo("player")
     if not spellChannel == nil and not spellCast == nil then return end
     if Detoxin() then return end
-    if IsSpellInRange("Earth Shock","target") == 1 and Mike_Shaman_Interact and not spellChannel == nil and not spellCast == nil then
-        Mike_Shaman_Interact = false
-        if IsCurrentAction(24) then
-            UseAction(24)
-        end
-        Stop_Follow()
-        print("Stopped following")
-    end
     if UnitAffectingCombat("player") or UnitAffectingCombat("Mikewarrior") then
         Shaman_startup_heal()
         if Mike_Percentage_mana("player") < 0.3 then
             if Mike_Check_spell_ready("Mana Tide Totem") then
-                CastSpellByName("Mana Tide Totem")
+               Mike_CastSpellByName("Mana Tide Totem")
                 return
             end
         end
@@ -95,16 +122,16 @@ function Mike_Shaman_Restoration()
     if playerToHeal ~= nil then
         if (howManyHurt + howManyCriticalHurt) > 4 then
             if Mike_Check_spell_ready("Nature's Swiftness") then
-                CastSpellByName("Nature's Swiftness")
+               Mike_CastSpellByName("Nature's Swiftness")
                 return
             end
             if Mike_Check_spell_ready("Tidal Force")then
-                CastSpellByName("Tidal Force")
+               Mike_CastSpellByName("Tidal Force")
                 return
             end
         end
         if howManyHurt >= 4 then
-            CastSpellByName("Chain Heal")
+           Mike_CastSpellByName("Chain Heal")
             SpellTargetUnit(playerToHeal)
             return
         else
@@ -118,17 +145,17 @@ function Heal(unit)
         ClearTarget()
         if Mike_Percentage_health(unit) <= 0.9 and not UnitAura(unit, "Riptide") and Mike_Check_spell_ready("Riptide") then
             print("Casting Riptide")
-            CastSpellByName("Riptide")
+           Mike_CastSpellByName("Riptide")
             SpellTargetUnit(unit)
             return
         elseif Mike_Percentage_health(unit) <= 0.7 and Mike_Check_spell_ready("Lesser Healing Wave") then
             print("Casting: Lesser Healing Wave. Target: "..UnitName(unit))
-            CastSpellByName("Lesser Healing Wave")
+           Mike_CastSpellByName("Lesser Healing Wave")
             SpellTargetUnit(unit)
             return
         elseif Mike_Percentage_health(unit) <= 0.4 and Mike_Check_spell_ready("Healing Wave") then
             print("Casting: Healing Wave. Target: "..UnitName(unit))
-            CastSpellByName("Healing Wave")
+           Mike_CastSpellByName("Healing Wave")
             SpellTargetUnit(unit)
             return
         end
@@ -136,7 +163,7 @@ function Heal(unit)
     _,englishClass,_ = UnitClass(unit);
     if englishClass == "WARRIOR" and Mike_Check_spell_ready("Earth Shield") then
         if not UnitAura(unit,"Earth Shield") then
-            CastSpellByName("Earth Shield");
+           Mike_CastSpellByName("Earth Shield");
             SpellTargetUnit(unit);
             return
         end
@@ -151,7 +178,7 @@ function Shaman_res()
         for i, v in ipairs(Mike_party) do
             _,englishClass,_ = UnitClass(v);
             if englishClass == "PRIEST" and UnitIsDead(v) then
-                CastSpellByName("Ancestral Spirit")
+               Mike_CastSpellByName("Ancestral Spirit")
                 SpellTargetUnit(v)
                 return
             end
@@ -159,7 +186,7 @@ function Shaman_res()
         for i, v in ipairs(Mike_party) do
             _,englishClass,_ = UnitClass(v);
             if UnitIsDead(v) then
-                CastSpellByName("Ancestral Spirit")
+               Mike_CastSpellByName("Ancestral Spirit")
                 SpellTargetUnit(v)
                 return
             end
@@ -175,7 +202,7 @@ function Detoxin()
             if type == "Poison" then
                 if Mike_Check_spell_ready("Cure Toxins") then
                         SendChatMessage("Remove poison on "..UnitName(v), "RAID", nil, nil)
-                        CastSpellByName("Cure Toxins");
+                       Mike_CastSpellByName("Cure Toxins");
                         SpellTargetUnit(v);
                     return true
                 end

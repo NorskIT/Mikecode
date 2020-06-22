@@ -1,6 +1,10 @@
 
 local chargeCounter = 0
 
+function Mike_Warrior_Main()
+    single_target_warr_prot()
+end
+
 function single_target_warr_prot()
     if GetShapeshiftForm() ~= 2 then
         CastSpellByName("Defensive Stance")

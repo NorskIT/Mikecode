@@ -7,6 +7,10 @@ local Mike_isFightingBoss = false
 local Mike_mage_jump = false
 
 
+function Mike_Mage_Main()
+    single_target_mage_arcane() 
+end
+
 function Combat_hp_mp_check()
     if UnitAffectingCombat("player") then
         if Mike_Percentage_mana("player") < 0.20 then

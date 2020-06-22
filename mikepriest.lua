@@ -23,7 +23,10 @@ function Priest_auto_heal()
                 SpellTargetUnit("target");
             else
                 Mike_Print("Casting: tries to use mana pot")
-                Mana_pot()
+                
+                if Mike_Percentage_mana("player") <= 0.10 then
+                    Mana_pot()
+                end
             end
         end
     end

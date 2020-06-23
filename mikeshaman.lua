@@ -1,4 +1,4 @@
--- (1): Elemental (2): Enchancement (3): Restoration
+-- (1): Elemental (2): Enhancement (3): Restoration
 local Mike_Shaman_talent = nil
 
 function Mike_Shaman_Main()
@@ -6,18 +6,18 @@ function Mike_Shaman_Main()
     if Mike_Shaman_talent == nil then
         Mike_Shaman_talent = Mike_GetTalentIndex()
     end
-    if Mike_Shaman_talent == 1 then
+    if Mike_Shaman_talent == "Elemental" then
         if UnitName("player") ~= Mike_Name_Main then
             AssistUnit(Mike_Name_Main)
         end
         Mike_Role = "caster"
         Mike_Shaman_Elemental()
-    elseif Mike_Shaman_talent == 2 then
+    elseif Mike_Shaman_talent == "Enhancement" then
         if UnitName("player") ~= Mike_Name_Main then
             AssistUnit(Mike_Name_Main)
         end
         Mike_Role = "melee"
-        Mike_Shaman_Enchancement()
+        Mike_Shaman_Enhancement()
     elseif Mike_Shaman_talent == 3 then
         Mike_Role = "caster"
         Mike_Shaman_Restoration()
@@ -25,7 +25,7 @@ function Mike_Shaman_Main()
         
 end
 
-function Mike_Shaman_Enchancement()
+function Mike_Shaman_Enhancement()
     -- Not implemented
 end
 

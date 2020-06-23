@@ -12,7 +12,7 @@ mikewarriorprotcode.lua
 mikepriest.lua
 mikemage.lua
 mikeshaman.lua
-mikewarolock.lua
+mikewarlock.lua
 mikedruid.lua
 mikepaladin.lua
 AutoEquipBestItem.lua

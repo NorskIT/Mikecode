@@ -17,6 +17,10 @@ end
 function Mike_Paladin_Buff()
     local class = nil
     if table.getn(Mike_Paladin_Party) == 0 then
+        class = UnitClass("player")
+        if class == "Paladin" then
+            Mike_Paladin_Party[#Mike_Paladin_Party+1] = UnitName("player")
+        end
         if UnitInRaid("player") ~= nil then
             for x=1, GetNumRaidMembers() do
                 class = UnitClass("raid"..x)

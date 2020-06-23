@@ -7,7 +7,7 @@ Mike_health_flask = {"Runic Healing Potion", "Super Healing Potion"}
 Mike_mana_flask = {"Runic Mana Potion", "Super Mana Potion"}
 
 -- MAIN CHARACTER
-Mike_Name_Main = "Mikepalen"
+Mike_Name_Main = "Mikelockto"
 
 Mike_Priest_Interact = false
 
@@ -33,6 +33,8 @@ local Mike_outOfRange = false
 local Mike_isMoving = false
 function MAGNUSBOX:OnEvent()
     if (event == "UI_ERROR_MESSAGE" and arg1 ~= "Spell is not ready yet.") then
+        Mike_OnUpdate(arg1)
+        if 1 then return end
         if UnitName("player") == "Mikepriest" then
             Mike_Priest_Interact = true
         end
@@ -44,7 +46,7 @@ function MAGNUSBOX:OnEvent()
         elseif (arg1 == "Out of range.") and UnitName("player") ~= "Mikepriest"  then
             InteractUnit("target")
         elseif arg1 == "You are too far away!" and UnitName("player") ~= "Mikepriest"  then
-            Mike_Paladin_OnUpdate("You are too far away!")
+            Mike_OnUpdate(arg1)
             InteractUnit("target")
         elseif IsSpellInRange("Arcane Blast", "target") and arg1 == "Can't do that while moving" then
             print("Stopped moving: " .. arg1)
@@ -55,6 +57,25 @@ function MAGNUSBOX:OnEvent()
     end
 end
 MAGNUSBOX:SetScript("OnEvent", MAGNUSBOX.OnEvent)
+
+function Mike_OnUpdate(arg)
+    class = UnitClass("player")
+    if class == "Warrior" then
+        --Mike_Warrior_OnUpdate(arg)
+    elseif class == "Warlock" then
+        Mike_Warlock_OnUpdate(arg)
+    elseif class == "Priest" then
+        --Mike_Priest_OnUpdate(arg)
+    elseif class == "Druid" then
+        --Mike_Druid_OnUpdate(arg)
+    elseif class == "Paladin" then
+        Mike_Paladin_OnUpdate(arg)
+    elseif class == "Mage" then
+        --Mike_Mage_OnUpdate(arg)
+    elseif class == "Shaman" then
+       -- Mike_Shaman_OnUpdate(arg)
+    end
+end
 
 function Mike_Follow(spec)
     if UnitName("player") == Mike_Name_Main then return end
@@ -300,6 +321,63 @@ function Mike_hasDebuff_Target(debuffName)
         end
     end
     return false
+end
+
+--This counts how many indivuall debuffs of same name it has. Made specifically for warlock DOTS. DONT USE THIS
+function Mike_CountDebuff_Individuall_Target(debuffName)
+    local Mike_debuff_sum = 0
+    for i=1,40 do
+        local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, shouldConsolidate, spellId = UnitDebuff("target",i)
+        if name == debuffName then
+            Mike_debuff_sum = Mike_debuff_sum + 1
+        end
+    end
+    return Mike_debuff_sum
+end
+
+function Mike_Debuff_Check_If_Im_Owner(debuffName)
+    local Mike_debuff_sum = 0
+    for i=1,40 do
+        local name, rank, icon, count, debuffType, duration, expirationTime, unitCaster, isStealable, shouldConsolidate, spellId = UnitDebuff("target",i)
+        if name == debuffName and UnitName(unitCaster) == UnitName("player") then
+            return true
+        end
+    end
+    return false
+end
+
+function Mike_Is_Busy()
+    local spellChannel = UnitChannelInfo("player")
+    local spellCast = UnitCastingInfo("player")
+    if spellChannel == nil and spellCast == nil then
+        return false
+    end
+    return true
+end
+
+-- Counts how many of occurences of CLASS in raid/party
+function Mike_Count_Class_On_Team(countThisClass)
+    local Mike_Group_Total = 0
+    local Mike_Group_Prefix = nil
+    local Mike_Count_Class_Total = 0
+    local Mike_Player_Class = UnitClass("player")
+    if Mike_Player_Class == countThisClass then
+        Mike_Count_Class_Total = Mike_Count_Class_Total + 1
+    end
+    if UnitInRaid("player") ~= nil then
+        Mike_Group_Total = GetNumRaidMembers()
+        Mike_Group_Prefix = "raid"
+    else
+        Mike_Group_Total = GetNumPartyMembers()
+        Mike_Group_Prefix = "party"
+    end
+    for x=1, Mike_Group_Total do
+        class = UnitClass(Mike_Group_Prefix..x)
+        if class == countThisClass then
+            Mike_Count_Class_Total = Mike_Count_Class_Total + 1
+        end
+    end  
+    return Mike_Count_Class_Total 
 end
 
 function Mike_Check_spell_ready(spell)

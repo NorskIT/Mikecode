@@ -11,6 +11,10 @@ function Mike_Mage_Main()
     single_target_mage_arcane() 
 end
 
+function Mike_Mage_Aoe()
+
+end
+
 function Combat_hp_mp_check()
     if UnitAffectingCombat("player") then
         if Mike_Percentage_mana("player") < 0.20 then
@@ -115,7 +119,7 @@ function single_target_mage_frost()
     end
 end
 
-function Mage_aoe()
+function Mike_Mage_Aoe()
     Combat_hp_mp_check()
     local spell = UnitChannelInfo("player")
     if spell == nil then

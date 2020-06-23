@@ -12,5 +12,8 @@ mikewarriorprotcode.lua
 mikepriest.lua
 mikemage.lua
 mikeshaman.lua
+mikewarolock.lua
+mikedruid.lua
+mikepaladin.lua
 AutoEquipBestItem.lua
 AutoDisenchant.lua

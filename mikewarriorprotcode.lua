@@ -6,6 +6,9 @@ function Mike_Warrior_Main()
 end
 
 function single_target_warr_prot()
+    if UnitName("player") ~= Mike_Name_Main then
+        AssistUnit(Mike_Name_Main)
+    end
     if GetShapeshiftForm() ~= 2 then
         CastSpellByName("Defensive Stance")
         Mike_Print("Casting: Defensive Stance")

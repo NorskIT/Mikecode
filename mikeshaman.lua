@@ -1,5 +1,13 @@
--- (1): Elemental (2): Enhancement (3): Restoration
+
 local Mike_Shaman_talent = nil
+local Mike_Shaman_Interacting = false
+
+function Mike_Shaman_OnUpdate(arg)
+    if arg == "You are too far away!" or arg == "Target needs to be in front of you." then
+        Mike_InteractUnit("target")
+        Mike_Shaman_Interacting = true
+    end
+end
 
 function Mike_Shaman_Main()
     Mike_Shaman_Common_Function()
@@ -18,8 +26,8 @@ function Mike_Shaman_Main()
         end
         Mike_Role = "melee"
         Mike_Shaman_Enhancement()
-    elseif Mike_Shaman_talent == 3 then
-        Mike_Role = "caster"
+    elseif Mike_Shaman_talent == "Restoration" then
+        Mike_Role = "healer"
         Mike_Shaman_Restoration()
     end
         
@@ -33,6 +41,10 @@ function Mike_Shaman_Aoe()
 
 end
 
+function Mike_Shaman_Buff()
+
+end
+
 function Mike_Shaman_PowerUp()
 
 end
@@ -40,14 +52,13 @@ end
 function Mike_Shaman_Common_Function()
     local spellChannel = UnitChannelInfo("player")
     local spellCast = UnitCastingInfo("player")
-    if IsSpellInRange("Earth Shock","target") == 1 and Mike_Caster_Interact and spellChannel == nil and spellCast == nil then
-        Mike_Caster_Interact = false
-        if IsCurrentAction(24) then
-            UseAction(24)
-        end
+    if IsSpellInRange("Earth Shock","target") == 1 and Mike_Shaman_Interacting and spellChannel == nil and spellCast == nil then
+        Mike_Shaman_Interacting = false
+        StopAttack()
         Stop_Follow()
         print("Stopped following")
     end
+    Mike_Interrupt_target()
 end
 
 function Mike_Shaman_Elemental()
@@ -101,12 +112,11 @@ function Shaman_startup_heal()
 end
 
 function Mike_Shaman_Restoration()
-    Mike_Interrupt_target()
     local spellChannel = UnitChannelInfo("player")
     local spellCast = UnitCastingInfo("player")
     if not spellChannel == nil and not spellCast == nil then return end
     if Detoxin() then return end
-    if UnitAffectingCombat("player") or UnitAffectingCombat("Mikewarrior") then
+    if UnitAffectingCombat("player") or UnitAffectingCombat(Mike_Name_Main) then
         Shaman_startup_heal()
         if Mike_Percentage_mana("player") < 0.3 then
             if Mike_Check_spell_ready("Mana Tide Totem") then
@@ -175,20 +185,20 @@ end
 function Shaman_res()
     local spell = UnitChannelInfo("player")
     if spell == nil then
-        for i, v in ipairs(Mike_party) do
-            _,englishClass,_ = UnitClass(v);
-            if englishClass == "PRIEST" and UnitIsDead(v) then
-               Mike_CastSpellByName("Ancestral Spirit")
-                SpellTargetUnit(v)
-                return
+        
+        for i=1, Mike_Get_Group_Size() do
+            _,englishClass,_ = UnitClass(Mike_Get_Group_Prefix()..i);
+            if (englishClass == "SHAMAN" or englishClass == "PRIEST") and UnitIsDeadOrGhost(Mike_Get_Group_Prefix()..i) == 1 then
+                Mike_CastSpellByName("Ancestral Spirit")
+                SpellTargetUnit(Mike_Get_Group_Prefix()..i)
+                Mike_Print("Casting: Ressurection on "..UnitName(Mike_Get_Group_Prefix()..i))
             end
         end
-        for i, v in ipairs(Mike_party) do
-            _,englishClass,_ = UnitClass(v);
-            if UnitIsDead(v) then
-               Mike_CastSpellByName("Ancestral Spirit")
-                SpellTargetUnit(v)
-                return
+        for i=1, Mike_Get_Group_Size() do
+            if UnitIsDeadOrGhost(Mike_Get_Group_Prefix()..i) == 1 then
+                Mike_CastSpellByName("Ancestral Spirit")
+                SpellTargetUnit(Mike_Get_Group_Prefix()..i)
+                Mike_Print("Casting: Ressurection on "..UnitName(Mike_Get_Group_Prefix()..i))
             end
         end
     end
@@ -196,7 +206,8 @@ end
 
 
 function Detoxin()
-    for i, v in ipairs(Mike_party) do
+    for i=1, Mike_Get_Group_Size() do
+        local v = Mike_Get_Group_Prefix()..i
         for o=1,40 do 
             local name,_,_,_,type = UnitDebuff(v,i,1) 
             if type == "Poison" then

@@ -2,12 +2,43 @@
 local Mike_Priest_lowHpHeal = false
 
 local Mike_Priest_Heal_All = true
+local Mike_Priest_Interacting = false
 
-function Mike_Priest_Main()
-    Priest_auto_heal()
+function Mike_Priest_OnUpdate(arg)
+    if arg == "You are too far away!" or arg == "Target needs to be in front of you." then
+        Mike_InteractUnit("target")
+        Mike_Mage_Interacting = true
+    end
 end
 
-function Priest_auto_heal()
+function Mike_Priest_Main()
+    Mike_Role = "caster"
+    if Mike_Priest_Talent == nil then
+        Mike_Priest_Talent = Mike_GetTalentIndex()
+    end
+    Mike_Priest_Common_Function()
+
+    if Mike_Priest_Talent == "Holy" then
+        Mike_Priest_Holy()
+    elseif Mike_Priest_Talent == "Shadow" then
+        --Mike_Priest_Shadow()
+    elseif Mike_Priest_Talent == "Discipline" then
+        --Mike_Priest_Discipline()
+    end
+end
+
+function Mike_Priest_Common_Function()
+    local spellChannel = UnitChannelInfo("player")
+    local spellCast = UnitCastingInfo("player")
+    if IsSpellInRange("Smite","target") == 1 and Mike_Mage_Interacting and spellChannel == nil and spellCast == nil then
+        Mike_Mage_Interacting = false
+        StopAttack()
+        Stop_Follow()
+        print("Stopped following")
+    end
+end
+
+function Mike_Priest_Holy()
     local spellChannel = UnitChannelInfo("player")
     local spellCast = UnitCastingInfo("unit")
     if UnitExists("target") then
@@ -218,34 +249,38 @@ function Cleans(unit)
     return false
 end
 
+function Mike_Priest_Aoe()
+
+end
+
 function Priest_res()
     local spell = UnitChannelInfo("player")
     if spell == nil then
-        for i, v in ipairs(Mike_partyReverse) do
-            _,englishClass,_ = UnitClass(v);
-            if (englishClass == "SHAMAN" or englishClass == "PRIEST") and Mike_Percentage_health(v) == 0 then
-                CastSpellByName("Resurrection")
-                SpellTargetUnit(v)
-                Mike_Print("Casting: Ressurection on "..UnitName(v))
+        for i=1, Mike_Get_Group_Size() do
+            _,englishClass,_ = UnitClass(Mike_Get_Group_Prefix()..i);
+            if (englishClass == "SHAMAN" or englishClass == "PRIEST") and UnitIsDeadOrGhost(Mike_Get_Group_Prefix()..i) == 1 then
+                Mike_CastSpellByName("Resurrection")
+                SpellTargetUnit(Mike_Get_Group_Prefix()..i)
+                Mike_Print("Casting: Ressurection on "..UnitName(Mike_Get_Group_Prefix()..i))
             end
         end
-        for i, v in ipairs(Mike_partyReverse) do
-            _,englishClass,_ = UnitClass(v);
-            if Mike_Percentage_health(v) == 0 then
-                CastSpellByName("Resurrection")
-                SpellTargetUnit(v)
-                Mike_Print("Casting: Ressurection on "..UnitName(v))
+        for i=1, Mike_Get_Group_Size() do
+            if UnitIsDeadOrGhost(Mike_Get_Group_Prefix()..i) == 1 then
+                Mike_CastSpellByName("Resurrection")
+                SpellTargetUnit(Mike_Get_Group_Prefix()..i)
+                Mike_Print("Casting: Ressurection on "..UnitName(Mike_Get_Group_Prefix()..i))
             end
         end
     end
 end
 
-function Priest_buff()
+function Mike_Priest_Buff()
     if not UnitAura("player", "Inner Fire") then
         CastSpellByName("Inner Fire");
         SpellTargetUnit("player");
     end
-    for i, v in ipairs(Mike_party) do
+    for i=1, Mike_Get_Group_Size() do
+        local v = Mike_Get_Group_Prefix()..i
         if not UnitAura(v, "Prayer of Fortitude") then
             if Mike_Check_spell_ready("Prayer of Fortitude") then
                 ClearTarget();

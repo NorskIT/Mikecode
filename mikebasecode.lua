@@ -1,13 +1,14 @@
-Mike_party = {"player", "raid1", "raid2", "raid3", "raid4", "raid5", "raid6", "raid7", "raid8", "raid9"}
-Mike_partyReverse = {"raid9", "raid8", "raid7", "raid6", "raid5", "raid4", "raid3", "raid2", "raid1", "player"}
-Mike_partyName = {"Mikewarrior", "Mikemagen", "Mikemagto", "Mikemagtre", "Mikemagfire", "Mikemagfem", "Mikemagseks", "Mikemagsyv", "Mikepriest", "Mikeshamheal"}
-Mike_partyMages = {"Mikemagen", "Mikemagto", "Mikemagtre", "Mikemagfire", "Mikemagfem", "Mikemagseks", "Mikemagsyv"}
+--Mike_party = {"player", "raid1", "raid2", "raid3", "raid4", "raid5", "raid6", "raid7", "raid8", "raid9"}
+--Mike_partyReverse = {"raid9", "raid8", "raid7", "raid6", "raid5", "raid4", "raid3", "raid2", "raid1", "player"}
+--Mike_partyName = {"Mikewarrior", "Mikemagen", "Mikemagto", "Mikemagtre", "Mikemagfire", "Mikemagfem", "Mikemagseks", "Mikemagsyv", "Mikepriest", "Mikeshamheal", "Mikeshamen", "Mikeshamto", "Mikeshamtre", "Mikeshamfire", "Mikeshamfem", "Mikepalen", "Mikepalto", "Mikepaltre", "Mikepalfire", "Mikepalfem", "Mikepalseks", "Mikehunten", "Mikelocken", "Mikelockto", "Mikedruiden"}
+--Mike_partyMages = {"Mikemagen", "Mikemagto", "Mikemagtre", "Mikemagfire", "Mikemagfem", "Mikemagseks", "Mikemagsyv"}
 Mike_partyInterruptors = {"Mikemagen", "Mikemagto", "Mikemagtre", "Mikemagfire", "Mikemagfem", "Mikemagseks", "Mikemagsyv", "Mikeshamheal", "Mikewarrior"}
 Mike_health_flask = {"Runic Healing Potion", "Super Healing Potion"}
 Mike_mana_flask = {"Runic Mana Potion", "Super Mana Potion"}
 
 -- MAIN CHARACTER
-Mike_Name_Main = "Mikelockto"
+Mike_Name_Main = "Mikepalen"
+Mike_Name_Main_Tank = "Mikewarrior"
 
 Mike_Priest_Interact = false
 
@@ -28,31 +29,18 @@ local Mike_Debug = true
 
 local MAGNUSBOX = CreateFrame("Button","MAGNUSBOX",UIParent)
 
-MAGNUSBOX:RegisterEvent("UI_ERROR_MESSAGE");
+
+MAGNUSBOX:SetScript("OnEvent", mb_OnEvent)
 local Mike_outOfRange = false
 local Mike_isMoving = false
 function MAGNUSBOX:OnEvent()
-    if (event == "UI_ERROR_MESSAGE" and arg1 ~= "Spell is not ready yet.") then
+    if (event == "UI_ERROR_MESSAGE") then
         Mike_OnUpdate(arg1)
-        if 1 then return end
-        if UnitName("player") == "Mikepriest" then
-            Mike_Priest_Interact = true
-        end
-        if UnitName("player") == "Mikeshamheal" then
-            Mike_Shaman_Interact = true
-        end
-        if (arg1 =="Target needs to be in front of you.") and UnitName("player") ~= "Mikepriest" then
-            InteractUnit("target")
-        elseif (arg1 == "Out of range.") and UnitName("player") ~= "Mikepriest"  then
-            InteractUnit("target")
-        elseif arg1 == "You are too far away!" and UnitName("player") ~= "Mikepriest"  then
-            Mike_OnUpdate(arg1)
-            InteractUnit("target")
-        elseif IsSpellInRange("Arcane Blast", "target") and arg1 == "Can't do that while moving" then
-            print("Stopped moving: " .. arg1)
-            MoveForwardStart()
-            MoveForwardStop()
-        end
+        return
+    end
+    if (event == "CONFIRM_SUMMON") then
+        ConfirmSummon()
+        StaticPopup1:Hide()
         return
     end
 end
@@ -67,30 +55,51 @@ function Mike_OnUpdate(arg)
     elseif class == "Priest" then
         --Mike_Priest_OnUpdate(arg)
     elseif class == "Druid" then
-        --Mike_Druid_OnUpdate(arg)
+        Mike_Druid_OnUpdate(arg)
     elseif class == "Paladin" then
         Mike_Paladin_OnUpdate(arg)
     elseif class == "Mage" then
-        --Mike_Mage_OnUpdate(arg)
+        Mike_Mage_OnUpdate(arg)
     elseif class == "Shaman" then
-       -- Mike_Shaman_OnUpdate(arg)
+       Mike_Shaman_OnUpdate(arg)
+    elseif class == "Hunter" then
+       Mike_Hunter_OnUpdate(arg)
     end
 end
 
-function Mike_Follow(spec)
+MAGNUSBOX:RegisterEvent("UI_ERROR_MESSAGE");
+MAGNUSBOX:RegisterEvent("ADDON_LOADED")
+MAGNUSBOX:RegisterEvent("CHAT_MSG_ADDON")
+MAGNUSBOX:RegisterEvent("PLAYER_ENTER_COMBAT")
+MAGNUSBOX:RegisterEvent("PLAYER_LEAVE_COMBAT")
+MAGNUSBOX:RegisterEvent("PARTY_INVITE_REQUEST")
+MAGNUSBOX:RegisterEvent("CONFIRM_SUMMON")
+MAGNUSBOX:RegisterEvent("RESURRECT_REQUEST")
+MAGNUSBOX:RegisterEvent("QUEST_ACCEPT_CONFIRM")
+MAGNUSBOX:RegisterEvent("QUEST_DETAIL")
+MAGNUSBOX:RegisterEvent("GROUP_ROSTER_CHANGED")
+MAGNUSBOX:RegisterEvent("UNIT_SPELLCAST_SENT")
+
+function Mike_Follow()
     if UnitName("player") == Mike_Name_Main then return end
-    if IsCurrentAction(24) then
-        UseAction(24)
+    StopAttack()
+    if UnitIsDeadOrGhost("player") == 1 then
+        if  UnitIsDeadOrGhost(Mike_Name_Main) == 1 and CheckInteractDistance(Mike_Name_Main, 4) then
+            FollowUnit(Mike_Name_Main)
+        else
+            Mike_Follow_Closest_Dead()
+        return
+        end
     end
-    if spec == "Healer" then
-        if UnitIsDeadOrGhost("Mikemagen") ~= nil then
+    if Mike_Role == "healer" then
+        if UnitIsDeadOrGhost("Mikemagen") ~= nil or UnitIsConnected("Mikemagen") ~= 1 then
             Mike_Follow_Closest()
         else
             FollowUnit("Mikemagen")
         end
         return
     else
-        if UnitIsDeadOrGhost(Mike_Name_Main) ~= nil then
+        if UnitIsDeadOrGhost(Mike_Name_Main) ~= nil or UnitIsConnected(Mike_Name_Main) ~= 1 then
             Mike_Follow_Closest()
         else
             FollowUnit(Mike_Name_Main)
@@ -99,53 +108,21 @@ function Mike_Follow(spec)
     end
 end
 
-
-function Mike_Assist()
-    if UnitName("player") == Mike_Name_Main then return end
-    AssistUnit(Mike_Name_Main)
-    Mike_InteractUnit("target")
-    if Mike_Role == "caster" then
-        Mike_Caster_Interact = true
+function Mike_Follow_Closest_Dead()
+    local Mike_Group_Total = 0
+    local Mike_Group_Prefix = nil
+    if UnitInRaid("player") ~= nil then
+        Mike_Group_Total = GetNumRaidMembers()
+        Mike_Group_Prefix = "raid"
+    else
+        Mike_Group_Total = GetNumPartyMembers()
+        Mike_Group_Prefix = "party"
     end
-end
-
-function Mike_InteractUnit(target)
-    SetCVar("autoInteract", 1)
-    InteractUnit(target)
-    SetCVar("autoInteract", 0)
-end
-
-function Mike_Setup()
-    Mike_Interact_Counter = 0
-    Mike_Create_Macros()
-end
-
-function Mike_Create_Macros()
-    local race = UnitRace("player")
-    if race == "Orc" then
-        Mike_Mount_Sequence = "/run CastSpellByName(\"Tawny Wind Rider\"); CastSpellByName(\"Swift Timber Wolf\")"
-    elseif race == "Troll" then
-        Mike_Mount_Sequence = "/run CastSpellByName(\"Tawny Wind Rider\"); CastSpellByName(\"Swift Orange Raptor\")"
-    elseif race == "Blood Elf" then
-        Mike_Mount_Sequence = "/run CastSpellByName(\"Tawny Wind Rider\"); CastSpellByName(\"Swift Red Hawkstrider\")"
-    end
-    Mike_DeleteMacro("Mount")
-    index=CreateMacro("Mount",0,Mike_Mount_Sequence,nil)
-	PickupMacro(index)
-	PlaceAction(56)
-    ClearCursor()
-    Mike_DeleteMacro("Mike_Buff")
-    index=CreateMacro("Mike_Buff",1,"/run Mike_"..class.."_Buff()",nil)
-	PickupMacro(index)
-	PlaceAction(55)
-    ClearCursor()
-
-
-    if class ~= "Mage" then
-        PickupSpell("Auto Attack")
-        PlaceAction(24)
-        ClearCursor()
-    end
+    for x=1, Mike_Group_Total do
+        if UnitIsDeadOrGhost(Mike_Group_Prefix..x) == 1 and CheckInteractDistance(Mike_Group_Prefix..x, 4) then
+            FollowUnit(Mike_Group_Prefix..x)
+        end
+    end    
 end
 
 function Mike_Follow_Closest()
@@ -165,6 +142,99 @@ function Mike_Follow_Closest()
     end    
 end
 
+
+function Mike_Assist()
+    if UnitName("player") == Mike_Name_Main then return end
+    AssistUnit(Mike_Name_Main)
+    Mike_InteractUnit("target")
+    if Mike_Role == "caster" or Mike_Role == "healer" then
+        Mike_Mage_Interacting = true
+        Mike_Priest_Interacting = true
+        Mike_Shaman_Interacting = true
+        Mike_Paladin_Interacting = true
+        Mike_Druid_Interacting = true
+    end
+end
+
+function Mike_InteractUnit(target)
+    SetCVar("autoInteract", 1)
+    InteractUnit(target)
+    SetCVar("autoInteract", 0)
+end
+
+function Mike_Setup()
+    Mike_Interact_Counter = 0
+    Mike_Create_Macros()
+    SetCVar("AutoLootDefault", 1)
+end
+
+function Mike_Create_Macros()
+    local race = UnitRace("player")
+    if race == "Orc" then
+        Mike_Mount_Sequence = "/run CastSpellByName(\"Tawny Wind Rider\"); CastSpellByName(\"Swift Timber Wolf\")"
+    elseif race == "Troll" then
+        Mike_Mount_Sequence = "/run CastSpellByName(\"Tawny Wind Rider\"); CastSpellByName(\"Swift Orange Raptor\")"
+    elseif race == "Blood Elf" then
+        Mike_Mount_Sequence = "/run CastSpellByName(\"Tawny Wind Rider\"); CastSpellByName(\"Swift Red Hawkstrider\")"
+    elseif race == "Tauren" then
+        Mike_Mount_Sequence = "/run CastSpellByName(\"Tawny Wind Rider\"); CastSpellByName(\"Great Gray Kodo\")"
+    end
+    
+    Mike_DeleteMacro("Mount")
+    index=CreateMacro("Mount",0,Mike_Mount_Sequence,nil)
+	PickupMacro(index)
+	PlaceAction(56)
+    ClearCursor()
+    Mike_DeleteMacro("Mike_Buff")
+    index=CreateMacro("Mike_Buff",1,"/run Mike_"..class.."_Buff()",nil)
+	PickupMacro(index)
+	PlaceAction(55)
+    ClearCursor()
+    Mike_DeleteMacro("Mike_Equip")
+    index=CreateMacro("Mike_Equip",1,"/run Equip()",nil)
+	PickupMacro(index)
+	PlaceAction(48)
+    ClearCursor()
+    if class ~= "Mage" then
+        PickupSpell("Auto Attack")
+        PlaceAction(24)
+        ClearCursor()
+    end
+end
+
+function Mike_Invite_All()
+    local numMembers = GetNumGuildMembers();
+    local PlayerName = nil
+    for v=1, numMembers do
+        PlayerName = GetGuildRosterInfo(v)
+        print("Invite: "..PlayerName)
+        InviteUnit(PlayerName)
+    end
+end
+
+
+
+function Mike_Get_Group_Size()
+    if UnitInRaid("player") ~= nil then
+        return GetNumRaidMembers()
+    else
+        return GetNumPartyMembers()
+    end
+    return 0
+end
+
+function Mike_Get_Group_Prefix()
+    if UnitInRaid("player") ~= nil then
+        return "raid"
+    else
+        return "party"
+    end
+end
+
+function Mike_Is_In_Group()
+    return (GetNumRaidMembers() ~= 0 or GetNumPartyMembers() ~= 0)
+end
+
 function Mike_Sort_Table(arr)
     table.sort(arr, function(a, b) return a > b end)
     return arr
@@ -180,6 +250,7 @@ function Mike_GetTalentIndex()
     for x=1,3 do
         local tName, _, pointsSpent, _, _ = GetTalentTabInfo(x)
         if Mike_pointChecker < pointsSpent then
+            Mike_pointChecker = pointsSpent
             Mike_Talent_tName = tName
         end
     end
@@ -187,8 +258,8 @@ function Mike_GetTalentIndex()
 end
 
 function Mike_None_In_Combat()
-    for i, v in ipairs(Mike_party) do
-        if UnitAffectingCombat(v) then
+    for i=1, Mike_Get_Group_Size() do
+        if UnitAffectingCombat(Mike_Get_Group_Prefix()..i) then
             return false
         end
     end
@@ -196,8 +267,8 @@ function Mike_None_In_Combat()
 end
 
 function Mike_Is_Anyone_Dead()
-    for i, v in ipairs(Mike_party) do
-        if Mike_Percentage_health(v) == 0 then
+    for i=1, Mike_Get_Group_Size() do
+        if UnitIsDeadOrGhost(Mike_Get_Group_Prefix()..i) then
             return true
         end
     end
@@ -211,7 +282,8 @@ function Mike_Member_most_hurt()
     local howManyMinorHurt = 0      -- How many with less than 90% hp left
     local howManyHurt = 0           -- How many with less than 70% hp left.
     local howManyCriticalHurt = 0   -- How many with less than 50% hp left.
-    for i, v in ipairs(Mike_party) do
+    for i=1, Mike_Get_Group_Size() do
+        local v = Mike_Get_Group_Prefix()..i
         if Mike_Percentage_health(v) ~= 0 then
             if unit == nil then
                 unit = v

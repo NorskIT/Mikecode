@@ -15,5 +15,6 @@ mikeshaman.lua
 mikewarlock.lua
 mikedruid.lua
 mikepaladin.lua
+mikehunter.lua
 AutoEquipBestItem.lua
 AutoDisenchant.lua

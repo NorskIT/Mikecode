@@ -2,6 +2,7 @@
 local chargeCounter = 0
 
 function Mike_Warrior_Main()
+    Mike_Role = "melee"
     single_target_warr_prot()
 end
 
@@ -153,6 +154,14 @@ function single_target_warr_prot()
         CastSpellByName("Devastate")
         SpellTargetUnit("target");
     end
+end
+
+function Mike_Warrior_Buff()
+
+end
+
+function Mike_Warrior_Aoe()
+
 end
 
 

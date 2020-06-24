@@ -17,10 +17,6 @@ end
 function Mike_Paladin_Buff()
     local class = nil
     if table.getn(Mike_Paladin_Party) == 0 then
-        class = UnitClass("player")
-        if class == "Paladin" then
-            Mike_Paladin_Party[#Mike_Paladin_Party+1] = UnitName("player")
-        end
         if UnitInRaid("player") ~= nil then
             for x=1, GetNumRaidMembers() do
                 class = UnitClass("raid"..x)
@@ -36,49 +32,34 @@ function Mike_Paladin_Buff()
                 end
             end
         end 
+        Mike_Paladin_Party = Mike_Sort_Table(Mike_Paladin_Party)
     end
-    Mike_Paladin_Party = Mike_Sort_Table(Mike_Paladin_Party)
     -- Iterate total amount of auras (6)
     for i=1,6 do
         if UnitName("player") == Mike_Paladin_Party[i] and not UnitAura("player",Mike_Paladin_Aura[i]) then
            Mike_CastSpellByName(Mike_Paladin_Aura[i])
         end
     end
-    local Mike_Group_Total = 0
-    local Mike_Group_Prefix = nil
-    if UnitInRaid("player") ~= nil then
-        Mike_Group_Total = GetNumRaidMembers()
-        Mike_Group_Prefix = "raid"
-    else
-        Mike_Group_Total = GetNumPartyMembers()
-        Mike_Group_Prefix = "party"
-    end
-    if Mike_Paladin_Active_Buff ~= nil then
-        if not UnitAura("player",Mike_Paladin_Active_Buff) then
-            Mike_Paladin_Active_Buff = nil
-        end
-    end
-    if Mike_Paladin_Party[Mike_Paladin_Buff_Counter] == UnitName("player") then
-        for i=1, table.getn(Mike_Paladin_Raid_Blessings) do
-            for x=1, Mike_Group_Total do
-                if Mike_Paladin_Active_Buff ~= nil then
-                    if not UnitAura(Mike_Group_Prefix..x,Mike_Paladin_Active_Buff) and IsSpellInRange(Mike_Paladin_Active_Buff, Mike_Group_Prefix..x) then
-                        Mike_CastSpellByName(Mike_Paladin_Active_Buff)
-                        SpellTargetUnit(Mike_Group_Prefix..x)
-                    end
-                elseif not UnitAura(Mike_Group_Prefix..x,Mike_Paladin_Raid_Blessings[i]) and IsSpellInRange(Mike_Paladin_Raid_Blessings[i], Mike_Group_Prefix..x) then
-                    Mike_CastSpellByName(Mike_Paladin_Raid_Blessings[i])
-                    SpellTargetUnit(Mike_Group_Prefix..x)
-                    if Mike_Paladin_Active_Buff == nil then
-                        Mike_Paladin_Active_Buff = Mike_Paladin_Raid_Blessings[i]
-                    end
+    -- Blessings:
+    for blessIndex=1, table.getn(Mike_Paladin_Raid_Blessings) do
+        local blessing = Mike_Paladin_Raid_Blessings[blessIndex]
+        if Mike_Paladin_Party[blessIndex] == UnitName("player") then
+            for v=1, Mike_Get_Group_Size() do
+                local playerUnitId = Mike_Get_Group_Prefix()..v
+                if not UnitAura(playerUnitId,blessing) and IsSpellInRange(blessing, playerUnitId) then
+                    Mike_CastSpellByName(blessing)
+                    SpellTargetUnit(playerUnitId)
+                    return
                 end
             end
         end
     end
-    Mike_Paladin_Buff_Counter = Mike_Paladin_Buff_Counter + 1
-    if Mike_Paladin_Buff_Counter > table.getn(Mike_Paladin_Party) then
-        Mike_Paladin_Buff_Counter = 1
+end
+
+function Mike_Paladin_Aoe()
+    if Mike_Check_spell_ready("Consecration") then
+        Mike_CastSpellByName("Consecration")
+        return
     end
 end
 

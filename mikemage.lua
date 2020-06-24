@@ -1,21 +1,36 @@
 
-local Mike_intCounter = 1
 local Mike_buffCounter = 1
-
 local Mike_isFightingBoss = false
+local Mike_Mage_Talent = nil
+local Mike_Mage_Interacting = false
+local Mike_Mage_Interact_Bug_Fix_Counter = 0
+local Mike_Mage_Party = {}
 
-local Mike_mage_jump = false
+function Mike_Mage_OnUpdate(arg)
+    if arg == "You are too far away!" or arg == "Target needs to be in front of you." then
+        Mike_InteractUnit("target")
+        Mike_Mage_Interacting = true
+    end
+end
 
 
 function Mike_Mage_Main()
-    single_target_mage_arcane() 
+    Mike_Role = "caster"
+    Mike_Mage_Common_Function()
+    if Mike_Mage_Interacting then return end
+    if Mike_Mage_Talent == nil then
+        Mike_Mage_Talent = Mike_GetTalentIndex()
+    end
+    if Mike_Mage_Talent == "Frost" then
+        Mike_Mage_Frost()
+    elseif Mike_Mage_Talent == "Arcane" then
+        Mike_Mage_Arcane()
+    elseif Mike_Mage_Talent == "Fire" then
+        Mike_Mage_Fire()
+    end
 end
 
-function Mike_Mage_Aoe()
-
-end
-
-function Combat_hp_mp_check()
+function Mike_Mage_Critical_Health()
     if UnitAffectingCombat("player") then
         if Mike_Percentage_mana("player") < 0.20 then
             if Mike_Check_spell_ready("Evocation") then
@@ -37,22 +52,24 @@ function Combat_hp_mp_check()
     end
 end
 
+function Mike_Mage_Common_Function()
+    local spellChannel = UnitChannelInfo("player")
+    local spellCast = UnitCastingInfo("player")
+    if IsSpellInRange("Arcane Blast","target") == 1 and Mike_Mage_Interacting then
+        print("x")
+        Mike_Mage_Interacting = false
+        StopAttack()
+        Stop_Follow()
+        print("Stopped following")
+    end
+    Mike_Mage_Critical_Health()
+end
 
 -- ARCANE DPS
-function single_target_mage_arcane()
-    local spell = UnitChannelInfo("player")
-    -- The Nexus last boss. Jumps if Crystallize has been removed.
-    hasCrystallize = Mike_CountDebuff("Crystallize")
-    if hasCrystallize <= 1 then
-        Mike_mage_jump = true
-    elseif Mike_mage_jump and hasCrystallize == 0 then
-        JumpOrAscendStart()
-        Mike_mage_jump = false
-    end
-    if spell == nil then
-        Combat_hp_mp_check()
-        for i, v in ipairs(Mike_party) do 
-            Remove_curse(v)
+function Mike_Mage_Arcane()
+    if not Mike_Is_Busy() then
+        for i=1, Mike_Get_Group_Size() do
+            Remove_curse(Mike_Get_Group_Prefix()..i)
         end
         if UnitExists("target") then
             if UnitClassification("target") == "elite" or UnitClassification("target") == "rareelite" or UnitClassification("target") == "worldboss" then
@@ -87,15 +104,14 @@ function single_target_mage_arcane()
 end
 
 -- FROST DPS
-function single_target_mage_frost()
+function Mike_Mage_Frost()
     local spell = UnitChannelInfo("player")
     if spell == nil then
         if Mike_Check_spell_ready("Ice Barrier") and not UnitAura("player", "Ice Barrier") then
             CastSpellByName("Ice Barrier")
         end
-        Combat_hp_mp_check()
-        for i, v in ipairs(Mike_party) do 
-            Remove_curse(v)
+        for i=1, Mike_Get_Group_Size() do
+            Remove_curse(Mike_Get_Group_Prefix()..i)
         end
         if UnitExists("target") then
             if IsMounted() then
@@ -120,7 +136,7 @@ function single_target_mage_frost()
 end
 
 function Mike_Mage_Aoe()
-    Combat_hp_mp_check()
+    Mike_Mage_Common_Function()
     local spell = UnitChannelInfo("player")
     if spell == nil then
         if IsMounted() then
@@ -133,16 +149,25 @@ function Mike_Mage_Aoe()
     end
 end
 
-function Mage_buff()
+function Mike_Mage_Buff()
+    if table.getn(Mike_Mage_Party) == 0 then
+        for x=1, Mike_Get_Group_Size() do
+            class = UnitClass(Mike_Get_Group_Prefix()..x)
+            if class == "Mage" then
+                Mike_Mage_Party[#Mike_Mage_Party+1] = UnitName(Mike_Get_Group_Prefix()..x)
+            end
+        end
+        Mike_Mage_Party = Mike_Sort_Table(Mike_Mage_Party)
+    end
     name = UnitName("player")
     if not UnitAura("player", "Molten Armor") then
         CastSpellByName("Molten Armor");
         SpellTargetUnit("player");
         Mike_Print("Casting: Molten Armor")
     end
-    if Mike_partyMages[Mike_buffCounter] == name then
-        for i, v in ipairs(Mike_party) do 
-            if not UnitAura(v, "Arcane Brilliance") then
+    if Mike_Mage_Party[Mike_buffCounter] == name then
+        for i=1, Mike_Get_Group_Size() do
+            if not UnitAura(Mike_Get_Group_Prefix()..i, "Arcane Brilliance") then
                 if Mike_Check_spell_ready("Arcane Brilliance") then
                     ClearTarget();
                     ClearCursor();
@@ -152,7 +177,7 @@ function Mage_buff()
         end
     end  
     Mike_buffCounter = Mike_buffCounter + 1
-    if Mike_buffCounter > 7 then
+    if Mike_buffCounter > table.getn(Mike_Mage_Party) then
         Mike_buffCounter = 1
     end
 end

@@ -13,6 +13,7 @@ function Mike_Warlock_OnUpdate(arg)
 end
 
 function Mike_Warlock_Main()
+    Mike_Role = "caster"
     if Mike_Warlock_Talent == nil then
         Mike_Warlock_Talent = Mike_GetTalentIndex()
     end
@@ -35,9 +36,7 @@ function Mike_Warlock_Common_Function()
     local spellCast = UnitCastingInfo("player")
     if IsSpellInRange("Shadow Bolt","target") == 1 and Mike_Warlock_Interacting and spellChannel == nil and spellCast == nil then
         Mike_Warlock_Interacting = false
-        if IsCurrentAction(24) then
-            UseAction(24)
-        end
+        StopAttack()
         Stop_Follow()
         print("Stopped following")
     end
@@ -51,8 +50,8 @@ function Mike_Warlock_Critical_Health()
     if UnitAffectingCombat("player") then
         if Mike_Percentage_health("player") <= 0.2 then
             -- Cast some awesome spells to prevent immenet death
-        end
         Heal_pot()
+        end
     end
 end
 
@@ -133,6 +132,10 @@ function Mike_Warlock_Buff()
         Mike_CastSpellByName("Demon Armor")
         return
     end
+end
+
+function Mike_Warlock_Aoe()
+
 end
 
 function Mike_Warlock_Affliction()
